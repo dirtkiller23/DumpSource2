@@ -20,22 +20,16 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "schemas.h"
 #include "globalvariables.h"
 #include "interfaces.h"
-#include "schemasystem/schemasystem.h"
 #include <filesystem>
-#include <fstream>
 #include <map>
 #include <unordered_set>
-#include <algorithm>
 #include "metadatalist.h"
 #include <optional>
-#include <cstring>
 #include <fmt/format.h>
 #include "metadata_stringifier.h"
 #include <modules.h>
-#include <regex>
 
 class SimpleCUtlString {
 public:
@@ -49,355 +43,27 @@ private:
 namespace Dumpers::Schemas
 {
 
-std::map<std::string, std::vector<std::regex>> g_replaceMap{
-	{
-		"CTestBlendContainer",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerDefault",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerLoopTrigger",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerNull",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerBlender",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-			std::regex(R"#(("m_flBlendFactor":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerDecayingSineWave",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerEnvelope",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerSet",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerStaticAdditiveSynth",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerRealtimeFMSineWave",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerSwitch",
-		{
-			std::regex(R"#(("m_nStreamingSize":) .*,)#"),
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-			std::regex(R"#(("m_nSampleCount":) .*,)#"),
-			std::regex(R"#(("m_nLoopStart":) .*,)#"),
-			std::regex(R"#(("m_nLoopEnd":) .*,)#"),
-			std::regex(R"#(("m_nChannels":) .*,)#"),
-		}
-	},
-	{
-		"VMixDynamics3BandDesc_t",
-		{
-			std::regex(R"#(("m_fldbKneeWidth":) .*,)#"),
-			std::regex(R"#(("m_flLowCutoffFreq":) .*,)#"),
-		}
-	},
-		{
-		"VMixVocoderDesc_t",
-		{
-			std::regex(R"#(("m_fldBModGain":) .*,)#"),
-		}
-	},
-	{
-		"CLookAtUpdateNode",
-		{
-			std::regex(R"#(("m_target":) .*,)#"),
-		}
-	},
-	{
-		"CFootLockUpdateNode",
-		{
-			std::regex(R"#(("m_flTiltPlanePitchSpringStrength":) .*,)#"),
-			std::regex(R"#(("m_flTiltPlaneRollSpringStrength":) .*,)#"),
-		}
-	},
-	{
-		"CBlockSelectionMetricEvaluator",
-		{
-			std::regex(R"#(("m_means":)[\s\S]*?\],)#"),
-			std::regex(R"#(("m_standardDeviations":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"CFeNamedJiggleBone",
-		{
-			std::regex(R"#(("m_transform":)[\s\S]*?\],)#"),
-			std::regex(R"#(("m_nJiggleParent":) .*,)#"),
-		}
-	},
-	{
-		"Dop26_t",
-		{
-			std::regex(R"#(("m_flSupport":)[\s\S]*?\])#"),
-		}
-	},
-	{
-		"FourCovMatrices3",
-		{
-			std::regex(R"#(("m_vDiag":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"CVoxelVisibility",
-		{
-			std::regex(R"#(("m_nOffset":) .*,)#"),
-			std::regex(R"#(("m_nElementCount":) .*)#"),
-		}
-	},
-	{
-		"CDOTAFightingGameActionDefinition",
-		{
-			std::regex(R"#(("m_nActionID":) .*,)#"),
-		}
-	},
-	{
-		"CDOTAMinesweeperGameDefinition",
-		{
-			std::regex(R"#(("m_flTimeLimit":) .*,)#"),
-			std::regex(R"#(("m_nStageProgressionTimerIncrease":) .*,)#"),
-			std::regex(R"#(("m_nTimerIncreaseExpireClicks":) .*,)#"),
-			std::regex(R"#(("m_nTimerIncreaseChance":) .*,)#"),
-			std::regex(R"#(("m_nIllusionManaCost":) .*,)#"),
-		}
-	},
-	{
-		"CDOTAOverworldDefinition",
-		{
-			std::regex(R"#(("m_eAssociatedEvent":) .*,)#"),
-		}
-	},
-	{
-		"CSurvivorsGameModeDefinition",
-		{
-			std::regex(R"#(("m_vCollisionIndicatorColorPlayer":)[\s\S]*?\],)#"),
-			std::regex(R"#(("m_vCollisionIndicatorColorEnemy":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"CSurvivorsPowerUpDefinition",
-		{
-			std::regex(R"#(("m_vWarmupEffectColor":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"AimMatrixOpFixedSettings_t",
-		{
-			std::regex(R"#(("m_influenceRotations":)[\s\S]*?\],)#"),
-			std::regex(R"#(("m_influenceOffsets":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"CLeanMatrixUpdateNode",
-		{
-			std::regex(R"#(("m_frameCorners":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"CMotionGraphGroup",
-		{
-			std::regex(R"#(("m_nCentroids":) .*,)#"),
-			std::regex(R"#(("m_nDimensions":) .*,)#"),
-		}
-	},
-	{
-		"LookAtOpFixedSettings_t",
-		{
-			std::regex(R"#(("m_influenceRotations":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"CDOTACandyShopDefinition",
-		{
-			std::regex(R"#(("m_unDefaultInventorySize":) .*,)#"),
-			std::regex(R"#(("m_unMaximumInventorySize":) .*,)#"),
-			std::regex(R"#(("m_unDefaultRerollCharges":) .*,)#"),
-			std::regex(R"#(("m_unDefaultMaxRerollCharges":) .*,)#"),
-			std::regex(R"#(("m_unFixedExchangeRecipeStartDate":) .*,)#"),
-			std::regex(R"#(("m_unFixedExchangeRecipeUpdateRateInSeconds":) .*,)#"),
-			std::regex(R"#(("m_unFixedExchangeRecipeDefaultCount":) .*,)#"),
-			std::regex(R"#(("m_unFixedExchangeRecipeMaximumCount":) .*,)#"),
-			std::regex(R"#(("m_unVariableExchangeInputCandyCount":) .*,)#"),
-			std::regex(R"#(("m_unVariableExchangeOutputCandyCount":) .*,)#"),
-			std::regex(R"#(("m_eExpireEvent":) .*,)#"),
-		}
-	},
-	{
-		"CDOTARoadToTIChallengeDefinition",
-		{
-			std::regex(R"#(("m_eEvent":) .*,)#"),
-			std::regex(R"#(("m_unTotalQuestPeriods":) .*,)#"),
-			std::regex(R"#(("m_unHeroesPerQuest":) .*,)#"),
-		}
-	},
-	{
-		"CSurvivorsPowerUpDefinition_MortimerKisses",
-		{
-			std::regex(R"#(("m_vWarmupEffectColor":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"CSurvivorsSpawnerDestructiblesDefinition",
-		{
-			std::regex(R"#(("m_flPerpendicularWallSpacing":) .*,)#"),
-		}
-	},
-	{
-		"CSurvivorsSpawnerTowerDefinition",
-		{
-			std::regex(R"#(("m_flPerpendicularWallSpacing":) .*,)#"),
-		}
-	},
-	{
-		"CPhysSurfaceProperties",
-		{
-			std::regex(R"#(("m_nameHash":) .*,)#"),
-			std::regex(R"#(("m_baseNameHash":) .*,)#"),
-		}
-	},
-	{
-		"SkeletonAnimCapture_t__Frame_t",
-		{
-			std::regex(R"#(("m_flTime":) .*,)#"),
-		}
-	},
-	{
-		"CFeMorphLayer",
-		{
-			std::regex(R"#(("m_nNameHash":) .*,)#"),
-		}
-	},
-	{
-		"CSSDSMsg_ViewRender",
-		{
-			std::regex(R"#(("m_nFrameCount":) .*,)#"),
-		}
-	},
-	{
-		"VMixModDelayDesc_t",
-		{
-			std::regex(R"#(("m_flDelay":) .*,)#"),
-		}
-	},
-	{
-		"CVoiceContainerAmpedDecayingSineWave",
-		{
-			std::regex(R"#(("m_nRate":) .*,)#"),
-			std::regex(R"#(("m_nFormat":) .*,)#"),
-		}
-	},
-	{
-		"ClutterSceneObject_t",
-		{
-			std::regex(R"#(("m_vMinBounds":)[\s\S]*?\],)#"),
-			std::regex(R"#(("m_vMaxBounds":)[\s\S]*?\],)#"),
-		}
-	},
-	{
-		"ClutterTile_t",
-		{
-			std::regex(R"#(("m_vMinBounds":)[\s\S]*?\],)#"),
-			std::regex(R"#(("m_vMaxBounds":)[\s\S]*?\],)#"),
-		}
-	},
+std::unordered_set<std::string> g_classWithBrokenDefaults =
+{
+	"CastSphereSATParams_t",
+	"Dop26_t",
+	"FourCovMatrices3",
+	"VMixVocoderDesc_t",
 };
+
+// Any function called after this will have uninitialized variables set to zero
+#ifdef WIN32
+__declspec(noinline)
+#else
+__attribute__((noinline))
+#endif
+	void CleanStack() {
+	// stack size might need to be increased for larger classes (perhaps use alloca with class size + extra)
+	volatile char stack[0x10000];
+	for (size_t i = 0; i < sizeof(stack); ++i) {
+		stack[i] = 0;
+	}
+}
 
 // Determine how and if to output metadata entry value based on it's type.
 std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& entry, const char* metadataTargetName)
@@ -463,8 +129,9 @@ std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& ent
 				typedef void* (*GetKV3DefaultsFn)();
 				typedef int (*SaveKV3AsJsonFn)(void* kv3, SimpleCUtlString& err, SimpleCUtlString& str);
 
-				if (!entry.m_pData || !(*(void**)entry.m_pData) || !strcmp(metadataTargetName, "CastSphereSATParams_t")) return "Could not parse KV3 Defaults";
+				if (!entry.m_pData || !(*(void**)entry.m_pData) || g_classWithBrokenDefaults.contains(metadataTargetName)) return "Could not parse KV3 Defaults";
 
+				CleanStack(); // Prepare stack for uninitialized variables in class constructor inside GetKV3Defaults
 				auto value = reinterpret_cast<GetKV3DefaultsFn>(*(void**)entry.m_pData)();
 
 				if (!value) return "Could not parse KV3 Defaults";
@@ -484,17 +151,7 @@ std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& ent
 				int res = SaveKV3AsJson(*(void**)value, err, buf);
 
 				if (res) {
-					std::string out = buf.Get();
-					if (g_replaceMap.find(metadataTargetName) != g_replaceMap.end())
-					{
-						const auto& regexVector = g_replaceMap.at(metadataTargetName);
-
-						for (const auto& regex : regexVector) {
-							out = std::regex_replace(out, regex, "$1 <HIDDEN FOR DIFF>,");
-						}
-					}
-
-					return out;
+					return buf.Get();
 				}
 
 				return "Could not parse KV3 Defaults";
