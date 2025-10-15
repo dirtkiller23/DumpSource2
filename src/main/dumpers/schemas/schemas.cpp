@@ -68,13 +68,9 @@ void OutputMetadataEntry(const SchemaMetadataEntryData_t& entry, std::ofstream& 
 
 void DumpClasses(CSchemaSystemTypeScope* typeScope, std::filesystem::path schemaPath, std::map<std::string, std::unordered_set<std::string>>& foundFiles)
 {
-	const auto& classes = typeScope->m_ClassBindings;
-
-	UtlTSHashHandle_t* handles = new UtlTSHashHandle_t[classes.Count()];
-	classes.GetElements(0, classes.Count(), handles);
-
-	for (int j = 0; j < classes.Count(); ++j) {
-		const auto classInfo = classes[handles[j]];
+	FOR_EACH_MAP(typeScope->m_DeclaredClasses.m_Map, iter)
+	{
+		const auto classInfo = typeScope->m_DeclaredClasses.m_Map.Element(iter)->m_pClassInfo;
 
 		if (!std::filesystem::is_directory(schemaPath / classInfo->m_pszProjectName))
 			if (!std::filesystem::create_directory(schemaPath / classInfo->m_pszProjectName))
@@ -144,13 +140,9 @@ void DumpClasses(CSchemaSystemTypeScope* typeScope, std::filesystem::path schema
 
 void DumpEnums(CSchemaSystemTypeScope* typeScope, std::filesystem::path schemaPath, std::map<std::string, std::unordered_set<std::string>>& foundFiles)
 {
-	const auto& enums = typeScope->m_EnumBindings;
-
-	UtlTSHashHandle_t* handles = new UtlTSHashHandle_t[enums.Count()];
-	enums.GetElements(0, enums.Count(), handles);
-
-	for (int j = 0; j < enums.Count(); ++j) {
-		const auto enumInfo = enums[handles[j]];
+	FOR_EACH_MAP(typeScope->m_DeclaredEnums.m_Map, iter)
+	{
+		const auto enumInfo = typeScope->m_DeclaredEnums.m_Map.Element(iter)->m_pEnumInfo;
 
 		if (!std::filesystem::is_directory(schemaPath / enumInfo->m_pszProjectName))
 			if (!std::filesystem::create_directory(schemaPath / enumInfo->m_pszProjectName))
