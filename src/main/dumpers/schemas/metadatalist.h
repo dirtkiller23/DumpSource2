@@ -96,6 +96,10 @@ inline std::map<std::string, MetadataValueType> g_mapMetadataNameToValue
 	{ "MVectorIsSometimesCoordinate", MetadataValueType::STRING },
 	{ "MKV3TransferSaveOpsForField", MetadataValueType::STRING },
 	{ "MSaveOpsForField", MetadataValueType::STRING },
+	{ "MPropertyReadonlyExpr", MetadataValueType::STRING },
+	{ "MPulseEditorSubHeaderText", MetadataValueType::STRING },
+	{ "MPropertyEditContextOverrideKey", MetadataValueType::STRING },
+	{ "MPropertyEditContextOverrideValue", MetadataValueType::STRING },
 
 	// INLINE STRING
 	{ "MDiskDataForResourceType", MetadataValueType::INLINE_STRING },
@@ -133,7 +137,7 @@ inline std::map<std::string, MetadataValueType> g_mapMetadataNameToValue
 	{ "MGetKV3ClassDefaults", MetadataValueType::KV3DEFAULTS },
 
 	// MISC
-	{ "MNetworkSendProxyRecipientsFilter", MetadataValueType::SEND_PROXY_RECIPIENTS_FILTER }
+	{ "MNetworkSendProxyRecipientsFilter", MetadataValueType::SEND_PROXY_RECIPIENTS_FILTER },
 };
 
 } // namespace Dumpers::Schemas
