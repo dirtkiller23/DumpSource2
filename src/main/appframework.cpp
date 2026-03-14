@@ -66,6 +66,13 @@ std::vector<AppSystemInfo> g_appSystems{
 	{ false, "soundsystem", SOUNDOPSYSTEMEDIT_INTERFACE_VERSION },
 	{ false, "vphysics2", VPHYSICS2HANDLE_INTERFACE_VERSION },
 	{ false, "worldrenderer", WORLD_RENDERER_MGR_INTERFACE_VERSION },
+	{ false, "assetsystem", ASSETSYSTEM_INTERFACE_VERSION, false, CS2_ONLY },
+	{ false, "assetpreview", ASSETPREVIEWSYSTEM_INTERFACE_VERSION, false, CS2_ONLY },
+	{ false, "resourcecompiler", RESOURCECOMPILERSYSTEM_INTERFACE_VERSION, false, CS2_ONLY },
+	{ false, "tools/hammer", "ToolSystem2_001", false, CS2_ONLY},
+	{ false, "tools/met", "ToolSystem2_001", false, CS2_ONLY},
+	{ false, "tools/pet", "ToolSystem2_001", false, CS2_ONLY},
+	{ false, "tools/cs2_item_editor", "ToolSystem2_001", false, CS2_ONLY},
 };
 
 std::map<std::string, IAppSystem*> g_factoryMap;

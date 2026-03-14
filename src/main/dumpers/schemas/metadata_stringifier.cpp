@@ -30,6 +30,8 @@
 #include <fmt/format.h>
 #include "metadata_stringifier.h"
 #include <modules.h>
+#include <vector>
+#include <regex>
 
 class SimpleCUtlString {
 public:
@@ -54,7 +56,23 @@ std::unordered_set<std::string> g_classWithBrokenDefaults =
 	"vphysics_save_ragdoll_control_t",
 	"CAnimAttachment",
 	"CBlockSelectionMetricEvaluator",
-	"HitReactFixedSettings_t"
+	"HitReactFixedSettings_t",
+	"RnSoftbodySpring_t",
+	"CAnimGraphDoc_GroupNode"
+};
+
+std::vector<std::regex> g_regexFilters =
+{
+	std::regex(R"#(("m_id":) .*)#"),
+	std::regex(R"#(("m_ID":) .*,)#"),
+	std::regex(R"#(("m_nControlPointCount":) .*)#"),
+	std::regex(R"#(("m_nControlPointStart":) .*)#"),
+	std::regex(R"#(("m_nRandomSeed":) .*,)#"),
+	std::regex(R"#(("m_seed":) .*,)#"),
+	std::regex(R"#(("m_outputPinID":) .*,)#"),
+	std::regex(R"#(("m_stateID":) .*)#"),
+	std::regex(R"#(("m_pinID":) .*)#"),
+	std::regex(R"#(("m_entryStateID":) .*)#"),
 };
 
 // Any function called after this will have uninitialized variables set to zero
@@ -165,7 +183,13 @@ std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& ent
 				int res = SaveKV3AsJson(*(void**)value, err, buf);
 
 				if (res) {
-					return buf.Get();
+					std::string out = buf.Get();
+
+					for (const auto& regex : g_regexFilters) {
+						out = std::regex_replace(out, regex, "$1 <HIDDEN FOR DIFF>,");
+					}
+
+					return out;
 				}
 
 				return "Could not parse KV3 Defaults";
