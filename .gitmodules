@@ -21,3 +21,7 @@
 	path = vendor/fmt
 	url = https://github.com/fmtlib/fmt
 	shallow = true
+[submodule "vendor/json"]
+	path = vendor/json
+	url = https://github.com/nlohmann/json
+	shallow = true

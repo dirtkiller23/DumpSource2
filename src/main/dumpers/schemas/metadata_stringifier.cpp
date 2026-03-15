@@ -92,7 +92,7 @@ __attribute__((noinline))
 // Determine how and if to output metadata entry value based on it's type.
 std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& entry, const char* metadataTargetName)
 {
-	if (g_mapMetadataNameToValue.find(entry.m_pszName) != g_mapMetadataNameToValue.end())
+	if (entry.m_pData && g_mapMetadataNameToValue.find(entry.m_pszName) != g_mapMetadataNameToValue.end())
 	{
 		auto valueType = g_mapMetadataNameToValue.at(entry.m_pszName);
 		switch (valueType)

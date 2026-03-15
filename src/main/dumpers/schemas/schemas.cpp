@@ -1,7 +1,7 @@
 /**
  * =============================================================================
  * DumpSource2
- * Copyright (C) 2024 ValveResourceFormat Contributors
+ * Copyright (C) 2026 ValveResourceFormat Contributors
  * =============================================================================
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -18,55 +18,19 @@
  */
 
 #include "schemas.h"
-#include "globalvariables.h"
 #include "interfaces.h"
-#include <filesystem>
-#include <fstream>
-#include <map>
-#include <unordered_set>
-#include <algorithm>
-#include "metadatalist.h"
 #include <optional>
-#include <cstring>
-#include <fmt/format.h>
 #include "metadata_stringifier.h"
 #include <spdlog/spdlog.h>
 #define private public
 #include "schemasystem/schemasystem.h"
 #undef private
+#include "filesystem_exporter.h"
 
 namespace Dumpers::Schemas
 {
 
-std::string CommentBlock(std::string str)
-{
-	size_t pos = 0;
-	while ((pos = str.find('\n', pos)) != std::string::npos) {
-		str.replace(pos, 1, "\n//");
-		pos += 3;
-	}
-
-	return str;
-}
-
-
-void OutputMetadataEntry(const SchemaMetadataEntryData_t& entry, std::ofstream& output, bool tabulate, const char* metadataTargetName)
-{
-	output << (tabulate ? "\t" : "") << "// " << entry.m_pszName;
-	if (entry.m_pData)
-	{
-		const auto metadataValue = GetMetadataValue(entry, metadataTargetName);
-		if (metadataValue) {
-			output << " = " << CommentBlock(*metadataValue);
-		}
-		else
-			output << " (UNKNOWN FOR PARSER)";
-	}
-
-	output << "\n";
-}
-
-void DumpClasses(CSchemaSystemTypeScope* typeScope, std::filesystem::path schemaPath, std::map<std::string, std::unordered_set<std::string>>& foundFiles)
+void DumpClasses(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSchemaClass>& classes)
 {
 	FOR_EACH_MAP(typeScope->m_DeclaredClasses.m_Map, iter)
 	{
@@ -75,143 +39,117 @@ void DumpClasses(CSchemaSystemTypeScope* typeScope, std::filesystem::path schema
 		if (!classInfo)
 			continue;
 
-		if (!std::filesystem::is_directory(schemaPath / classInfo->m_pszProjectName))
-			if (!std::filesystem::create_directory(schemaPath / classInfo->m_pszProjectName))
-				return;
+		IntermediateSchemaClass schemaClass{
+			.name = std::string(classInfo->m_pszName),
+			.module = std::string(classInfo->m_pszProjectName),
+		};
 
-		// Some classes have :: in them which we can't save.
-		auto sanitizedFileName = std::string(classInfo->m_pszName);
-		std::replace(sanitizedFileName.begin(), sanitizedFileName.end(), ':', '_');
-
-		// We save the file in a map so that we know which files are outdated and should be removed
-		foundFiles[classInfo->m_pszProjectName].insert(sanitizedFileName);
-
-		std::ofstream output((schemaPath / classInfo->m_pszProjectName / sanitizedFileName).replace_extension(".h"));
-
-		// Output metadata entries as comments before the class definition
 		spdlog::trace("Dumping class: '{}'", classInfo->m_pszName);
 		for (uint16_t k = 0; k < classInfo->m_nStaticMetadataCount; k++)
 		{
 			const auto& metadataEntry = classInfo->m_pStaticMetadata[k];
-			OutputMetadataEntry(metadataEntry, output, false, classInfo->m_pszName);
+			schemaClass.metadata.emplace_back(std::string(metadataEntry.m_pszName), GetMetadataValue(metadataEntry, classInfo->m_pszName), metadataEntry.m_pData);
 		}
-
-		output << "class " << classInfo->m_pszName;
-		Globals::stringsIgnoreStream << classInfo->m_pszName << "\n";
 
 		if (classInfo->m_nBaseClassCount > 0)
 		{
-			bool wroteBase = false;
 			for (uint16_t baseIndex = 0; baseIndex < classInfo->m_nBaseClassCount; ++baseIndex)
 			{
 				const auto* baseClass = classInfo->m_pBaseClasses[baseIndex].m_pClass;
 				if (!baseClass)
 					continue;
 
-				if (!wroteBase)
-				{
-					output << " : public " << baseClass->m_pszName;
-					wroteBase = true;
-				}
-				else
-				{
-					output << ", public " << baseClass->m_pszName;
-				}
+				schemaClass.parents.emplace_back(std::string(baseClass->m_pszName), std::string(baseClass->m_pszProjectName));
 			}
 		}
 
-		output << "\n{\n";
 
 		for (uint16_t k = 0; k < classInfo->m_nFieldCount; k++)
 		{
 			const auto& field = classInfo->m_pFields[k];
 			spdlog::trace("Dumping field: '{}' for class: '{}'", field.m_pszName, classInfo->m_pszName);
-			// Output metadata entires as comments before the field definition
+
+			IntermediateSchemaClassField intermediateField{
+				.name = std::string(field.m_pszName),
+				.offset = field.m_nSingleInheritanceOffset,
+				.type = field.m_pType,
+			};
+
 			for (uint16_t l = 0; l < field.m_nStaticMetadataCount; l++)
 			{
 				const auto& metadataEntry = field.m_pStaticMetadata[l];
-				OutputMetadataEntry(metadataEntry, output, true, classInfo->m_pszName);
+				intermediateField.metadata.emplace_back(std::string(metadataEntry.m_pszName), GetMetadataValue(metadataEntry, classInfo->m_pszName), metadataEntry.m_pData);
 			}
 
-			output << "\t" << field.m_pType->m_sTypeName.String() << " " << field.m_pszName << ";\n";
-			Globals::stringsIgnoreStream << field.m_pszName << "\n";
+			schemaClass.fields.push_back(std::move(intermediateField));
 		}
 
-		output << "};\n";
+		classes.push_back(std::move(schemaClass));
 	}
 }
 
-void DumpEnums(CSchemaSystemTypeScope* typeScope, std::filesystem::path schemaPath, std::map<std::string, std::unordered_set<std::string>>& foundFiles)
+void DumpEnums(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSchemaEnum>& enums)
 {
 	FOR_EACH_MAP(typeScope->m_DeclaredEnums.m_Map, iter)
 	{
 		const auto enumInfo = typeScope->m_DeclaredEnums.m_Map.Element(iter)->m_pEnumInfo;
 
-		if (!std::filesystem::is_directory(schemaPath / enumInfo->m_pszProjectName))
-			if (!std::filesystem::create_directory(schemaPath / enumInfo->m_pszProjectName))
-				return;
-
-		// Some classes have :: in them which we can't save.
-		auto sanitizedFileName = std::string(enumInfo->m_pszName);
-		std::replace(sanitizedFileName.begin(), sanitizedFileName.end(), ':', '_');
-
-		// We save the file in a map so that we know which files are outdated and should be removed
-		foundFiles[enumInfo->m_pszProjectName].insert(sanitizedFileName);
-
-		std::ofstream output((schemaPath / enumInfo->m_pszProjectName / sanitizedFileName).replace_extension(".h"));
-
-		for (uint16_t k = 0; k < enumInfo->m_nStaticMetadataCount; k++)
-		{
-			const auto& metadataEntry = enumInfo->m_pStaticMetadata[k];
-			OutputMetadataEntry(metadataEntry, output, false, enumInfo->m_pszName);
-		}
-
-		output << "enum " << enumInfo->m_pszName << " : ";
-		Globals::stringsIgnoreStream << enumInfo->m_pszName << "\n";
+		std::optional<std::string> alignment;
 
 		switch (enumInfo->m_nAlignment)
 		{
 		case 1:
-			output << "uint8_t";
+			alignment = "uint8_t";
 			break;
 		case 2:
-			output << "uint16_t";
+			alignment = "uint16_t";
 			break;
 		case 4:
-			output << "uint32_t";
+			alignment = "uint32_t";
 			break;
 		case 8:
-			output << "uint64_t";
+			alignment = "uint64_t";
 			break;
-		default:
-			output << "unknown alignment type";
 		}
 
-		output << "\n{\n";
+		IntermediateSchemaEnum schemaEnum{
+			.name = std::string(enumInfo->m_pszName),
+			.module = std::string(enumInfo->m_pszProjectName),
+			.stringAlignment = std::move(alignment),
+		};
+
+		for (uint16_t k = 0; k < enumInfo->m_nStaticMetadataCount; k++)
+		{
+			const auto& metadataEntry = enumInfo->m_pStaticMetadata[k];
+			schemaEnum.metadata.emplace_back(std::string(metadataEntry.m_pszName), GetMetadataValue(metadataEntry, enumInfo->m_pszName), metadataEntry.m_pData);
+		}
 
 		for (uint16_t k = 0; k < enumInfo->m_nEnumeratorCount; k++)
 		{
 			const auto& field = enumInfo->m_pEnumerators[k];
-			// Output metadata entires as comments before the field definition
+			IntermediateSchemaEnumMember member{
+				.name = std::string(field.m_pszName),
+				.value = field.m_nValue,
+			};
+
 			for (uint16_t l = 0; l < field.m_nStaticMetadataCount; l++)
 			{
 				const auto& metadataEntry = field.m_pStaticMetadata[l];
-				OutputMetadataEntry(metadataEntry, output, true, field.m_pszName);
+				member.metadata.emplace_back(std::string(metadataEntry.m_pszName), GetMetadataValue(metadataEntry, enumInfo->m_pszName), metadataEntry.m_pData);
 			}
 
-			output << "\t" << field.m_pszName << " = " << field.m_nValue << ",\n";
-			Globals::stringsIgnoreStream << field.m_pszName << "\n";
+			schemaEnum.members.push_back(std::move(member));
 		}
 
-		output << "};\n";
+		enums.push_back(std::move(schemaEnum));
 	}
 }
 
 
-void DumpTypeScope(CSchemaSystemTypeScope* typeScope, std::filesystem::path schemaPath, std::map<std::string, std::unordered_set<std::string>>& foundFiles)
+void DumpTypeScope(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSchemaEnum>& enums, std::vector<IntermediateSchemaClass>& classes)
 {
-	DumpClasses(typeScope, schemaPath, foundFiles);
-	DumpEnums(typeScope, schemaPath, foundFiles);
+	DumpClasses(typeScope, classes);
+	DumpEnums(typeScope, enums);
 }
 
 void Dump()
@@ -220,45 +158,15 @@ void Dump()
 	auto schemaSystem = Interfaces::schemaSystem;
 
 	const auto& typeScopes = schemaSystem->m_TypeScopes;
-	const auto schemaPath = Globals::outputPath / "schemas";
+	std::vector<IntermediateSchemaEnum> enums;
+	std::vector<IntermediateSchemaClass> classes;
 
-	if (!std::filesystem::is_directory(schemaPath))
-		if (!std::filesystem::create_directory(schemaPath))
-			return;
-
-	std::map<std::string, std::unordered_set<std::string>> foundFiles;
-
-	// still can't use GetNumStrings on dota
 	for (auto i = 0; i < typeScopes.m_Vector.Count(); ++i)
-		DumpTypeScope(typeScopes[i], schemaPath, foundFiles);
+		DumpTypeScope(typeScopes[i], enums, classes);
 
-	DumpTypeScope(schemaSystem->GlobalTypeScope(), schemaPath, foundFiles);
+	DumpTypeScope(schemaSystem->GlobalTypeScope(), enums, classes);
 
-	for (const auto& entry : std::filesystem::directory_iterator(schemaPath))
-	{
-		auto projectName = entry.path().filename().string();
-		bool isInMap = foundFiles.find(projectName) != foundFiles.end();
-
-		if (entry.is_directory() && !isInMap)
-		{
-			spdlog::info("Removing orphan schema folder {}", entry.path().generic_string());
-			std::filesystem::remove_all(entry.path());
-		}
-		else if (isInMap)
-		{
-
-			for (const auto& typeScopePath : std::filesystem::directory_iterator(entry.path()))
-			{
-				auto& filesSet = foundFiles[projectName];
-
-				if (filesSet.find(typeScopePath.path().stem().string()) == filesSet.end())
-				{
-					spdlog::info("Removing orphan schema file {}", typeScopePath.path().generic_string());
-					std::filesystem::remove(typeScopePath.path());
-				}
-			}
-		}
-	}
+	FilesystemExporter::Dump(enums, classes);
 }
 
 } // namespace Dumpers::Schemas

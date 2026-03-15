@@ -53,6 +53,10 @@ set(SPDLOG_FMT_EXTERNAL ON)
 add_subdirectory(fmt)
 add_subdirectory(spdlog)
 
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(JSON_Install OFF CACHE INTERNAL "")
+add_subdirectory(json)
+
 set_target_properties(
 	HL2SDK-CS2
 	HL2SDK-DOTA
@@ -63,5 +67,6 @@ set_target_properties(
 set_target_properties(
 	fmt
 	spdlog
+	nlohmann_json
 	PROPERTIES FOLDER Libraries
 )
