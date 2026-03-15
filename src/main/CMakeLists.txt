@@ -13,6 +13,7 @@ function(BUILD_GAME GAME GAME_PATH SDK)
     HL2SDK-${SDK}
     fmt::fmt
     spdlog
+    nlohmann_json::nlohmann_json
     ${CMAKE_DL_LIBS}
   )
 

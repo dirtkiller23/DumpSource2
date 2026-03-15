@@ -26,6 +26,7 @@
 #include "schemasystem/schemasystem.h"
 #undef private
 #include "filesystem_exporter.h"
+#include "json_exporter.h"
 
 namespace Dumpers::Schemas
 {
@@ -167,6 +168,7 @@ void Dump()
 	DumpTypeScope(schemaSystem->GlobalTypeScope(), enums, classes);
 
 	FilesystemExporter::Dump(enums, classes);
+	JsonExporter::Dump(enums, classes);
 }
 
 } // namespace Dumpers::Schemas
