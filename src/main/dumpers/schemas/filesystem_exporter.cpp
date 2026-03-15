@@ -34,7 +34,8 @@ namespace Dumpers::Schemas::FilesystemExporter
 std::string CommentBlock(std::string str)
 {
 	size_t pos = 0;
-	while ((pos = str.find('\n', pos)) != std::string::npos) {
+	while ((pos = str.find('\n', pos)) != std::string::npos)
+	{
 		str.replace(pos, 1, "\n//");
 		pos += 3;
 	}
@@ -42,13 +43,14 @@ std::string CommentBlock(std::string str)
 	return str;
 }
 
-
 void OutputMetadataEntry(const IntermediateMetadata& entry, std::ofstream& output, bool tabulate)
 {
 	output << (tabulate ? "\t" : "") << "// " << entry.name;
 
-	if (entry.hasValue) {
-		if (entry.stringValue) {
+	if (entry.hasValue)
+	{
+		if (entry.stringValue)
+		{
 			output << " = " << CommentBlock(*entry.stringValue);
 		}
 		else
@@ -135,7 +137,7 @@ void DumpEnums(const std::vector<IntermediateSchemaEnum>& enums, std::filesystem
 
 		std::ofstream output((schemaPath / intermediateEnum.module / sanitizedFileName).replace_extension(".h"));
 
-		for(const auto& metadata : intermediateEnum.metadata)
+		for (const auto& metadata : intermediateEnum.metadata)
 		{
 			OutputMetadataEntry(metadata, output, false);
 		}
@@ -146,7 +148,7 @@ void DumpEnums(const std::vector<IntermediateSchemaEnum>& enums, std::filesystem
 		for (const auto& member : intermediateEnum.members)
 		{
 			// Output metadata entires as comments before the field definition
-			for(const auto& metadata: member.metadata)
+			for (const auto& metadata : member.metadata)
 			{
 				OutputMetadataEntry(metadata, output, true);
 			}

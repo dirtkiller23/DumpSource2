@@ -28,12 +28,12 @@
 #include "dumpers/concommands/concommands.h"
 #include "dumpers/schemas/schemas.h"
 #include <modules.h>
+#include <fmt/format.h>
 
 void Usage()
 {
 	printf("Usage: DumpSource2 <output path>\n");
 }
-
 
 int main(int argc, char** argv)
 {
@@ -54,6 +54,30 @@ int main(int argc, char** argv)
 	}
 
 	spdlog::info("Starting Source2Dumper");
+
+	// Parse steam.inf for version info
+	{
+		auto steamInfPath = std::filesystem::current_path() / fmt::format("../../{}/steam.inf", GAME_PATH);
+		std::ifstream steamInf(steamInfPath);
+		if (steamInf.is_open())
+		{
+			std::string line;
+			while (std::getline(steamInf, line))
+			{
+				if (line.starts_with("SourceRevision="))
+					Globals::sourceRevision = line.substr(15);
+				else if (line.starts_with("VersionDate="))
+					Globals::versionDate = line.substr(12);
+				else if (line.starts_with("VersionTime="))
+					Globals::versionTime = line.substr(12);
+			}
+			spdlog::info("Read steam.inf: revision={} date={} time={}", Globals::sourceRevision, Globals::versionDate, Globals::versionTime);
+		}
+		else
+		{
+			spdlog::warn("Failed to open {}", steamInfPath.generic_string());
+		}
+	}
 
 	InitializeCoreModules();
 	InitializeAppSystems();

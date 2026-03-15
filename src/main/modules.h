@@ -21,7 +21,8 @@
 #include <memory>
 #include "utils/module.h"
 
-namespace Modules {
+namespace Modules
+{
 
 inline std::unique_ptr<CModule> schemaSystem = nullptr;
 inline std::unique_ptr<CModule> tier0 = nullptr;

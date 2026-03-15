@@ -24,12 +24,14 @@
 #include <string>
 #include <schemasystem/schematypes.h>
 
-struct CSchemaVarName {
+struct CSchemaVarName
+{
 	const char* m_pszName;
 	const char* m_pszType;
 };
 
-struct CSchemaSendProxyRecipientsFilter {
+struct CSchemaSendProxyRecipientsFilter
+{
 	void* unk;
 	void* filterFunction;
 	const char* m_pszName;

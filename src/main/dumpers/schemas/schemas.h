@@ -25,25 +25,29 @@
 namespace Dumpers::Schemas
 {
 
-struct IntermediateMetadata {
+struct IntermediateMetadata
+{
 	std::string name;
 	std::optional<std::string> stringValue;
 	bool hasValue;
 };
 
-struct IntermediateSchemaClassParent {
+struct IntermediateSchemaClassParent
+{
 	std::string name;
 	std::string module;
 };
 
-struct IntermediateSchemaClassField {
+struct IntermediateSchemaClassField
+{
 	std::string name;
 	int32_t offset;
 	std::vector<IntermediateMetadata> metadata;
 	CSchemaType* type;
 };
 
-struct IntermediateSchemaClass {
+struct IntermediateSchemaClass
+{
 	std::string name;
 	std::string module;
 	std::vector<IntermediateMetadata> metadata;
@@ -51,20 +55,21 @@ struct IntermediateSchemaClass {
 	std::vector<IntermediateSchemaClassField> fields;
 };
 
-struct IntermediateSchemaEnumMember {
+struct IntermediateSchemaEnumMember
+{
 	std::string name;
 	int64_t value;
 	std::vector<IntermediateMetadata> metadata;
 };
 
-struct IntermediateSchemaEnum {
+struct IntermediateSchemaEnum
+{
 	std::string name;
 	std::string module;
 	std::optional<std::string> stringAlignment;
 	std::vector<IntermediateMetadata> metadata;
 	std::vector<IntermediateSchemaEnumMember> members;
 };
-
 
 void Dump();
 

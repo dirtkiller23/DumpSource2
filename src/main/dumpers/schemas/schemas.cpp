@@ -64,7 +64,6 @@ void DumpClasses(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSche
 			}
 		}
 
-
 		for (uint16_t k = 0; k < classInfo->m_nFieldCount; k++)
 		{
 			const auto& field = classInfo->m_pFields[k];
@@ -145,7 +144,6 @@ void DumpEnums(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSchema
 		enums.push_back(std::move(schemaEnum));
 	}
 }
-
 
 void DumpTypeScope(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSchemaEnum>& enums, std::vector<IntermediateSchemaClass>& classes)
 {

@@ -56,89 +56,89 @@ json SerializeType(CSchemaType* type)
 
 	switch (type->m_eTypeCategory)
 	{
-	case SCHEMA_TYPE_BUILTIN:
-		j["category"] = "builtin";
-		j["name"] = type->m_sTypeName.String();
-		break;
-	case SCHEMA_TYPE_POINTER:
-		j["category"] = "ptr";
-		j["inner"] = SerializeType(static_cast<CSchemaType_Ptr*>(type)->m_pObjectType);
-		break;
-	case SCHEMA_TYPE_FIXED_ARRAY:
-	{
-		auto* arr = static_cast<CSchemaType_FixedArray*>(type);
-		j["category"] = "fixed_array";
-		j["count"] = arr->m_nElementCount;
-		j["inner"] = SerializeType(arr->m_pElementType);
-		break;
-	}
-	case SCHEMA_TYPE_ATOMIC:
-	{
-		j["category"] = "atomic";
-
-		// Extract outer name from m_sTypeName before '<'
-		std::string typeName = type->m_sTypeName.String();
-		auto pos = typeName.find('<');
-		if (pos != std::string::npos)
-		{
-			auto name = typeName.substr(0, pos);
-			// Trim trailing whitespace
-			while (!name.empty() && name.back() == ' ')
-				name.pop_back();
-			j["name"] = name;
-		}
-		else
-		{
-			j["name"] = typeName;
-		}
-
-		if (type->m_eAtomicCategory == SCHEMA_ATOMIC_T ||
-			type->m_eAtomicCategory == SCHEMA_ATOMIC_COLLECTION_OF_T)
-		{
-			j["inner"] = SerializeType(static_cast<CSchemaType_Atomic_T*>(type)->m_pTemplateType);
-		}
-		else if (type->m_eAtomicCategory == SCHEMA_ATOMIC_TT)
-		{
-			auto* tt = static_cast<CSchemaType_Atomic_TT*>(type);
-			j["inner"] = SerializeType(tt->m_pTemplateType);
-			j["inner2"] = SerializeType(tt->m_pTemplateType2);
-		}
-		break;
-	}
-	case SCHEMA_TYPE_DECLARED_CLASS:
-	{
-		j["category"] = "declared_class";
-		auto* classType = static_cast<CSchemaType_DeclaredClass*>(type);
-		if (classType->m_pClassInfo && classType->m_pClassInfo->m_pszName)
-		{
-			j["name"] = classType->m_pClassInfo->m_pszName;
-			j["module"] = classType->m_pClassInfo->m_pszProjectName;
-		}
-		else
+		case SCHEMA_TYPE_BUILTIN:
+			j["category"] = "builtin";
 			j["name"] = type->m_sTypeName.String();
-		break;
-	}
-	case SCHEMA_TYPE_DECLARED_ENUM:
-	{
-		j["category"] = "declared_enum";
-		auto* enumType = static_cast<CSchemaType_DeclaredEnum*>(type);
-		if (enumType->m_pEnumInfo && enumType->m_pEnumInfo->m_pszName)
+			break;
+		case SCHEMA_TYPE_POINTER:
+			j["category"] = "ptr";
+			j["inner"] = SerializeType(static_cast<CSchemaType_Ptr*>(type)->m_pObjectType);
+			break;
+		case SCHEMA_TYPE_FIXED_ARRAY:
 		{
-			j["name"] = enumType->m_pEnumInfo->m_pszName;
-			j["module"] = enumType->m_pEnumInfo->m_pszProjectName;
+			auto* arr = static_cast<CSchemaType_FixedArray*>(type);
+			j["category"] = "fixed_array";
+			j["count"] = arr->m_nElementCount;
+			j["inner"] = SerializeType(arr->m_pElementType);
+			break;
 		}
-		else
+		case SCHEMA_TYPE_ATOMIC:
+		{
+			j["category"] = "atomic";
+
+			// Extract outer name from m_sTypeName before '<'
+			std::string typeName = type->m_sTypeName.String();
+			auto pos = typeName.find('<');
+			if (pos != std::string::npos)
+			{
+				auto name = typeName.substr(0, pos);
+				// Trim trailing whitespace
+				while (!name.empty() && name.back() == ' ')
+					name.pop_back();
+				j["name"] = name;
+			}
+			else
+			{
+				j["name"] = typeName;
+			}
+
+			if (type->m_eAtomicCategory == SCHEMA_ATOMIC_T ||
+				type->m_eAtomicCategory == SCHEMA_ATOMIC_COLLECTION_OF_T)
+			{
+				j["inner"] = SerializeType(static_cast<CSchemaType_Atomic_T*>(type)->m_pTemplateType);
+			}
+			else if (type->m_eAtomicCategory == SCHEMA_ATOMIC_TT)
+			{
+				auto* tt = static_cast<CSchemaType_Atomic_TT*>(type);
+				j["inner"] = SerializeType(tt->m_pTemplateType);
+				j["inner2"] = SerializeType(tt->m_pTemplateType2);
+			}
+			break;
+		}
+		case SCHEMA_TYPE_DECLARED_CLASS:
+		{
+			j["category"] = "declared_class";
+			auto* classType = static_cast<CSchemaType_DeclaredClass*>(type);
+			if (classType->m_pClassInfo && classType->m_pClassInfo->m_pszName)
+			{
+				j["name"] = classType->m_pClassInfo->m_pszName;
+				j["module"] = classType->m_pClassInfo->m_pszProjectName;
+			}
+			else
+				j["name"] = type->m_sTypeName.String();
+			break;
+		}
+		case SCHEMA_TYPE_DECLARED_ENUM:
+		{
+			j["category"] = "declared_enum";
+			auto* enumType = static_cast<CSchemaType_DeclaredEnum*>(type);
+			if (enumType->m_pEnumInfo && enumType->m_pEnumInfo->m_pszName)
+			{
+				j["name"] = enumType->m_pEnumInfo->m_pszName;
+				j["module"] = enumType->m_pEnumInfo->m_pszProjectName;
+			}
+			else
+				j["name"] = type->m_sTypeName.String();
+			break;
+		}
+		case SCHEMA_TYPE_BITFIELD:
+			j["category"] = "bitfield";
+			j["count"] = static_cast<CSchemaType_Bitfield*>(type)->m_nBitfieldCount;
+			break;
+		default:
+			j["category"] = "builtin";
 			j["name"] = type->m_sTypeName.String();
-		break;
-	}
-	case SCHEMA_TYPE_BITFIELD:
-		j["category"] = "bitfield";
-		j["count"] = static_cast<CSchemaType_Bitfield*>(type)->m_nBitfieldCount;
-		break;
-	default:
-		j["category"] = "builtin";
-		j["name"] = type->m_sTypeName.String();
-		break;
+			break;
 	}
 
 	return j;
@@ -167,7 +167,7 @@ void DumpClasses(const std::vector<IntermediateSchemaClass>& classes, json& clas
 			parents.push_back(std::move(parentObj));
 		}
 
-		if(parents.size())
+		if (parents.size())
 			classObj["parents"] = std::move(parents);
 
 		json fields = json::array();
@@ -180,7 +180,7 @@ void DumpClasses(const std::vector<IntermediateSchemaClass>& classes, json& clas
 			fieldObj["type"] = SerializeType(field.type);
 
 			auto fieldMetadataArr = SerializeMetadataArray(field.metadata);
-			if(fieldMetadataArr.size())
+			if (fieldMetadataArr.size())
 				fieldObj["metadata"] = std::move(fieldMetadataArr);
 
 			fields.push_back(fieldObj);
@@ -192,7 +192,7 @@ void DumpClasses(const std::vector<IntermediateSchemaClass>& classes, json& clas
 		classesArray.push_back(std::move(classObj));
 	}
 }
-	
+
 void DumpEnums(const std::vector<IntermediateSchemaEnum>& enums, json& enumsArray)
 {
 	for (const auto& intermediateEnum : enums)
@@ -220,7 +220,7 @@ void DumpEnums(const std::vector<IntermediateSchemaEnum>& enums, json& enumsArra
 			members.push_back(std::move(memberObj));
 		}
 
-		if(members.size())
+		if (members.size())
 			enumObj["members"] = std::move(members);
 
 		enumsArray.push_back(std::move(enumObj));
@@ -237,6 +237,15 @@ void Dump(const std::vector<IntermediateSchemaEnum>& enums, const std::vector<In
 
 	DumpClasses(classes, classesArray);
 	DumpEnums(enums, enumsArray);
+
+	if (!Globals::sourceRevision.empty())
+		root["revision"] = std::stoi(Globals::sourceRevision);
+
+	if (!Globals::versionDate.empty())
+		root["version_date"] = Globals::versionDate;
+
+	if (!Globals::versionTime.empty())
+		root["version_time"] = Globals::versionTime;
 
 	root["classes"] = classesArray;
 	root["enums"] = enumsArray;

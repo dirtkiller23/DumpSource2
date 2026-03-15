@@ -33,11 +33,14 @@
 #include <vector>
 #include <regex>
 
-class SimpleCUtlString {
+class SimpleCUtlString
+{
 public:
-	const char* Get() {
+	const char* Get()
+	{
 		return m_pString;
 	}
+
 private:
 	const char* m_pString = nullptr;
 };
@@ -45,8 +48,7 @@ private:
 namespace Dumpers::Schemas
 {
 
-std::unordered_set<std::string> g_classWithBrokenDefaults =
-{
+std::unordered_set<std::string> g_classWithBrokenDefaults = {
 	"CastSphereSATParams_t",
 	"Dop26_t",
 	"FourCovMatrices3",
@@ -61,8 +63,7 @@ std::unordered_set<std::string> g_classWithBrokenDefaults =
 	"CAnimGraphDoc_GroupNode"
 };
 
-std::vector<std::regex> g_regexFilters =
-{
+std::vector<std::regex> g_regexFilters = {
 	std::regex(R"#(("m_id":) .*)#"),
 	std::regex(R"#(("m_ID":) .*,)#"),
 	std::regex(R"#(("m_nControlPointCount":) .*)#"),
@@ -81,10 +82,13 @@ __declspec(noinline)
 #else
 __attribute__((noinline))
 #endif
-	void CleanStack() {
+void
+CleanStack()
+{
 	// stack size might need to be increased for larger classes (perhaps use alloca with class size + extra)
 	volatile char stack[0x10000];
-	for (size_t i = 0; i < sizeof(stack); ++i) {
+	for (size_t i = 0; i < sizeof(stack); ++i)
+	{
 		stack[i] = 0;
 	}
 }
@@ -100,7 +104,8 @@ std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& ent
 			case MetadataValueType::STRING:
 			{
 				auto value = *static_cast<const char**>(entry.m_pData);
-				if (value) {
+				if (value)
+				{
 					Globals::stringsIgnoreStream << value << "\n";
 				}
 				return fmt::format("\"{}\"", value ? value : "(NULL)");
@@ -113,8 +118,10 @@ std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& ent
 			{
 				// max 8 characters. Also check for null term.
 				char* result = static_cast<char*>(entry.m_pData);
-				for (uint8_t i = 0; i < 8; ++i) {
-					if (result[i] == '\0') {
+				for (uint8_t i = 0; i < 8; ++i)
+				{
+					if (result[i] == '\0')
+					{
 						return fmt::format("\"{}\"", std::string(result, i));
 					}
 				}
@@ -161,19 +168,22 @@ std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& ent
 				typedef void* (*GetKV3DefaultsFn)();
 				typedef int (*SaveKV3AsJsonFn)(void* kv3, SimpleCUtlString& err, SimpleCUtlString& str);
 
-				if (!entry.m_pData || !(*(void**)entry.m_pData) || g_classWithBrokenDefaults.contains(metadataTargetName)) return "Could not parse KV3 Defaults";
+				if (!entry.m_pData || !(*(void**)entry.m_pData) || g_classWithBrokenDefaults.contains(metadataTargetName))
+					return "Could not parse KV3 Defaults";
 
 				CleanStack(); // Prepare stack for uninitialized variables in class constructor inside GetKV3Defaults
 				auto value = reinterpret_cast<GetKV3DefaultsFn>(*(void**)entry.m_pData)();
 
-				if (!value) return "Could not parse KV3 Defaults";
+				if (!value)
+					return "Could not parse KV3 Defaults";
 
 #ifdef WIN32
 				static auto SaveKV3AsJson = Modules::tier0->GetSymbol<SaveKV3AsJsonFn>("?SaveKV3AsJSON@@YA_NPEBVKeyValues3@@PEAVCUtlString@@1@Z");
 #else
 				static auto SaveKV3AsJson = Modules::tier0->GetSymbol<SaveKV3AsJsonFn>("_Z13SaveKV3AsJSONPK10KeyValues3P10CUtlStringS3_");
 #endif
-				if (!SaveKV3AsJson) {
+				if (!SaveKV3AsJson)
+				{
 					spdlog::critical("SaveKV3AsJson not found");
 					return {};
 				}
@@ -182,10 +192,12 @@ std::optional<std::string> GetMetadataValue(const SchemaMetadataEntryData_t& ent
 				SimpleCUtlString buf;
 				int res = SaveKV3AsJson(*(void**)value, err, buf);
 
-				if (res) {
+				if (res)
+				{
 					std::string out = buf.Get();
 
-					for (const auto& regex : g_regexFilters) {
+					for (const auto& regex : g_regexFilters)
+					{
 						out = std::regex_replace(out, regex, "$1 <HIDDEN FOR DIFF>,");
 					}
 

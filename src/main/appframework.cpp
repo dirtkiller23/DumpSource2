@@ -30,15 +30,12 @@
 
 static DumperApplication g_Application;
 
-#define CS2_ONLY (1<<0)
-
 struct AppSystemInfo
 {
 	bool gameBin;
 	const char* moduleName;
 	std::string interfaceVersion;
 	bool connect = true;
-	uint64_t flags = 0;
 };
 
 std::vector<AppSystemInfo> g_appSystems{
@@ -47,12 +44,14 @@ std::vector<AppSystemInfo> g_appSystems{
 	{ true, "client", "Source2ClientConfig001" },
 	{ false, "engine2", SOURCE2ENGINETOSERVER_INTERFACE_VERSION },
 	{ true, "host", "GameSystem2HostHook" },
-	{ true, "matchmaking", MATCHFRAMEWORK_INTERFACE_VERSION, true, CS2_ONLY },
+#ifdef GAME_CS2
+	{ true, "matchmaking", MATCHFRAMEWORK_INTERFACE_VERSION },
+#endif
 	{ true, "server", SOURCE2SERVERCONFIG_INTERFACE_VERSION },
 	{ false, "animationsystem", ANIMATIONSYSTEM_INTERFACE_VERSION },
 	{ false, "materialsystem2", TEXTLAYOUT_INTERFACE_VERSION },
 	{ false, "meshsystem", MESHSYSTEM_INTERFACE_VERSION, false },
-	{ false, "networksystem", NETWORKSYSTEM_INTERFACE_VERSION, false}, // can't connect on linux cuz of missing gameinfo	in IApplication
+	{ false, "networksystem", NETWORKSYSTEM_INTERFACE_VERSION, false }, // can't connect on linux cuz of missing gameinfo	in IApplication
 	{ false, "panorama", PANORAMAUIENGINE_INTERFACE_VERSION },
 	{ false, "particles", PARTICLESYSTEMMGR_INTERFACE_VERSION, false }, // needs renderdevice interface
 	{ false, "pulse_system", PULSESYSTEM_INTERFACE_VERSION },
@@ -148,16 +147,12 @@ void InitializeAppSystems()
 	spdlog::info("Initializing app systems");
 	for (const auto& appSystem : g_appSystems)
 	{
-#ifndef GAME_CS2
-		if ((appSystem.flags & CS2_ONLY) != 0)
-			continue;
-#endif // !GAME_CS2
-
 		std::string path = appSystem.gameBin ? fmt::format("../../{}/bin/{}", GAME_PATH, PLATFORM_FOLDER) : "";
 
 		auto targetPath = (std::filesystem::current_path() / path / (MODULE_PREFIX + std::string(appSystem.moduleName) + MODULE_EXT)).lexically_normal().generic_string();
 
-		if (!std::filesystem::exists(targetPath)) {
+		if (!std::filesystem::exists(targetPath))
+		{
 			spdlog::info("Skipping module as it does not exist: {}", targetPath);
 			continue;
 		}
