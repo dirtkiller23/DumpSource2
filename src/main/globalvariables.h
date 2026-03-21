@@ -31,4 +31,4 @@ namespace Globals {
 	inline std::string versionDate;
 	inline std::string versionTime;
 
-} // namespace Interfaces
+} // namespace Globals

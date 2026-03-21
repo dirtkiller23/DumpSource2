@@ -66,7 +66,10 @@ void DumpClasses(const std::vector<IntermediateSchemaClass>& classes, std::files
 	{
 		if (!std::filesystem::is_directory(schemaPath / intermediateClass.module))
 			if (!std::filesystem::create_directory(schemaPath / intermediateClass.module))
-				return;
+			{
+				spdlog::error("Failed to create directory for class module '{}'", intermediateClass.module);
+				continue;
+			}
 
 		// Some classes have :: in them which we can't save.
 		auto sanitizedFileName = intermediateClass.name;
@@ -106,7 +109,7 @@ void DumpClasses(const std::vector<IntermediateSchemaClass>& classes, std::files
 		for (const auto& field : intermediateClass.fields)
 		{
 			spdlog::trace("Dumping field: '{}' for class: '{}'", field.name, intermediateClass.name);
-			// Output metadata entires as comments before the field definition
+			// Output metadata entries as comments before the field definition
 			for (const auto& metadata : field.metadata)
 			{
 				OutputMetadataEntry(metadata, output, true);
@@ -126,7 +129,10 @@ void DumpEnums(const std::vector<IntermediateSchemaEnum>& enums, std::filesystem
 	{
 		if (!std::filesystem::is_directory(schemaPath / intermediateEnum.module))
 			if (!std::filesystem::create_directory(schemaPath / intermediateEnum.module))
-				return;
+			{
+				spdlog::error("Failed to create directory for enum module '{}'", intermediateEnum.module);
+				continue;
+			}
 
 		// Some classes have :: in them which we can't save.
 		auto sanitizedFileName = intermediateEnum.name;
@@ -137,6 +143,7 @@ void DumpEnums(const std::vector<IntermediateSchemaEnum>& enums, std::filesystem
 
 		std::ofstream output((schemaPath / intermediateEnum.module / sanitizedFileName).replace_extension(".h"));
 
+		spdlog::trace("Dumping enum: '{}'", intermediateEnum.name);
 		for (const auto& metadata : intermediateEnum.metadata)
 		{
 			OutputMetadataEntry(metadata, output, false);
@@ -147,7 +154,7 @@ void DumpEnums(const std::vector<IntermediateSchemaEnum>& enums, std::filesystem
 
 		for (const auto& member : intermediateEnum.members)
 		{
-			// Output metadata entires as comments before the field definition
+			// Output metadata entries as comments before the field definition
 			for (const auto& metadata : member.metadata)
 			{
 				OutputMetadataEntry(metadata, output, true);
@@ -168,7 +175,10 @@ void Dump(const std::vector<IntermediateSchemaEnum>& enums, const std::vector<In
 
 	if (!std::filesystem::is_directory(schemaPath))
 		if (!std::filesystem::create_directory(schemaPath))
+		{
+			spdlog::error("Failed to create schemas directory");
 			return;
+		}
 
 	std::map<std::string, std::unordered_set<std::string>> foundFiles;
 

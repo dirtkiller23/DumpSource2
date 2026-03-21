@@ -113,6 +113,8 @@ void DumpEnums(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSchema
 			break;
 		}
 
+		spdlog::trace("Dumping enum: '{}'", enumInfo->m_pszName);
+
 		IntermediateSchemaEnum schemaEnum{
 			.name = std::string(enumInfo->m_pszName),
 			.module = std::string(enumInfo->m_pszProjectName),
@@ -128,6 +130,7 @@ void DumpEnums(CSchemaSystemTypeScope* typeScope, std::vector<IntermediateSchema
 		for (uint16_t k = 0; k < enumInfo->m_nEnumeratorCount; k++)
 		{
 			const auto& field = enumInfo->m_pEnumerators[k];
+			spdlog::trace("Dumping enumerator: '{}' for enum: '{}'", field.m_pszName, enumInfo->m_pszName);
 			IntermediateSchemaEnumMember member{
 				.name = std::string(field.m_pszName),
 				.value = field.m_nValue,
