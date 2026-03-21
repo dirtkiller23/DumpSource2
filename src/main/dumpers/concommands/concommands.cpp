@@ -185,21 +185,21 @@ void WriteValueLine(ConVarRefAbstract cvar, std::ofstream& stream)
 	}
 	case EConVarType_Vector3:
 	{
-		stream << " [" << value->m_vec3Value.x << ", " << value->m_vec3Value.y << ", " << value->m_vec3Value.x << "]" << " (";
+		stream << " [" << value->m_vec3Value.x << ", " << value->m_vec3Value.y << ", " << value->m_vec3Value.z << "]" << " (";
 		WriteFlags(cvar.GetFlags(), stream);
 		stream << ")";
 		break;
 	}
 	case EConVarType_Vector4:
 	{
-		stream << " [" << value->m_vec4Value.x << ", " << value->m_vec4Value.y << ", " << value->m_vec4Value.x << ", " << value->m_vec4Value.w << "]" << " (";
+		stream << " [" << value->m_vec4Value.x << ", " << value->m_vec4Value.y << ", " << value->m_vec4Value.z << ", " << value->m_vec4Value.w << "]" << " (";
 		WriteFlags(cvar.GetFlags(), stream);
 		stream << ")";
 		break;
 	}
 	case EConVarType_Qangle:
 	{
-		stream << " [" << value->m_angValue.x << ", " << value->m_angValue.y << ", " << value->m_angValue.x << "]" << " (";
+		stream << " [" << value->m_angValue.x << ", " << value->m_angValue.y << ", " << value->m_angValue.z << "]" << " (";
 		WriteFlags(cvar.GetFlags(), stream);
 		stream << ")";
 		break;
