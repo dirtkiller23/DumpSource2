@@ -31,3 +31,7 @@ cd build
 cmake ..
 make
 ```
+
+## SDK Configuration
+
+Each game target is built with `build_game(GAME, GAME_PATH, SDK)` in [`src/main/CMakeLists.txt`](./src/main/CMakeLists.txt). The third argument selects which HL2SDK from `vendor/` to link against. Games update more often than the SDKs, so it may be necessary to switch to another game's SDK.
